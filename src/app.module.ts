@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './catalogs/user/user.module';
 import config from './config'
+import { User } from './catalogs/user/entities/user.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import config from './config'
         name: configService.get('dbName'),
         synchronize: true,
         autoLoadModels: true,
-        models: []
+        models: [User]
       })
     }),
     UserModule

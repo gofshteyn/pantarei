@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectModel } from '@nestjs/sequelize';
+import * as bcrypt from 'bcrypt';
+
+import { User } from './entities/user.entity';
 
 const users = [{
   id: 1,
@@ -15,8 +19,30 @@ const users = [{
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+
+  constructor(@InjectModel(User) private readonly userRepository: typeof User) {}
+
+  async create(createUserDto: CreateUserDto): Promise<CreateUserDto> {
+
+    const existUser = await this.findUserByEmail(createUserDto.email);
+    if (existUser) new BadRequestException('Пользователь уже существует');
+
+    createUserDto.password = await bcrypt.hash(createUserDto.password, 12);
+    await this.userRepository.create({
+      email: createUserDto.email,
+      password: createUserDto.password,
+      localizationId: createUserDto.localizationId
+    });
+    return createUserDto;
+  }
+
+  async findUserByEmail(email) {
+    return this.userRepository.findOne({
+      where: {
+        email,
+        deleted: false
+      }
+    });
   }
 
   findAll() {
