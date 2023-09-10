@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User } from 'src/catalogs/user/entities/user.entity';
+import AuthUserResponse from './entities/auth-user-response';
 
 @Injectable()
 export class AuthService {
@@ -15,15 +16,15 @@ export class AuthService {
     private readonly configService: ConfigService
   ) {}
 
-  async generateToken(user: number) {
-    const payload = { user };
+  private async generateToken(userId: number): Promise<string> {
+    const payload = { userId };
     return this.jwtService.sign(payload, {
       secret: this.configService.get('jwtSecret'),
       expiresIn: this.configService.get('jwtExpire')
     });
   }
 
-  async login(authUserDto: AuthUserDto): Promise<User> {
+  public async login(authUserDto: AuthUserDto): Promise<AuthUserResponse> {
     const user = await this.userService.findUserByEmail(authUserDto.email);
     if (!user) throw new BadRequestException({
       code: '400',
@@ -35,7 +36,14 @@ export class AuthService {
       message: 'Введен некорректный пароль'
     });
 
-    return user;
+    const token = await this.generateToken(user.id);
+    
+    const authUserResponse = new AuthUserResponse();
+    authUserResponse.id = user.id;
+    authUserResponse.email = user.email;
+    authUserResponse.emailVerified = user.emailVerified;
+
+    return {...authUserResponse, token};
   }
   
 }
