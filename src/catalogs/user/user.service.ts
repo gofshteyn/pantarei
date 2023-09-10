@@ -8,10 +8,10 @@ import { User } from './entities/user.entity';
 
 const users = [{
   id: 1,
-  displayName: 'Leonid Gofshtein',
+  displayName: 'Ivan Ivanov',
   objectName: {
-    ru: "Леонид Гофштэйн",
-    en: 'Leonid Gofshtein'
+    ru: "Иван Иванов",
+    en: 'Ivan Ivanov'
   },
   deleted: false
 }
@@ -22,21 +22,23 @@ export class UserService {
 
   constructor(@InjectModel(User) private readonly userRepository: typeof User) {}
 
-  async create(createUserDto: CreateUserDto): Promise<CreateUserDto> {
+  async create(createUserDto: CreateUserDto): Promise<User> {
 
-    const existUser = await this.findUserByEmail(createUserDto.email);
-    if (existUser) new BadRequestException('Пользователь уже существует');
+    const user = await this.findUserByEmail(createUserDto.email);
+    if (user) throw new BadRequestException({
+      code: '400',
+      message: 'Пользователь уже существует'
+    });
 
     createUserDto.password = await bcrypt.hash(createUserDto.password, 12);
-    await this.userRepository.create({
+    
+    return await this.userRepository.create({
       email: createUserDto.email,
-      password: createUserDto.password,
-      localizationId: createUserDto.localizationId
+      passwordHash: createUserDto.password
     });
-    return createUserDto;
   }
 
-  async findUserByEmail(email) {
+  async findUserByEmail(email: string): Promise<User> {
     return this.userRepository.findOne({
       where: {
         email,
@@ -49,8 +51,13 @@ export class UserService {
     return users;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number): Promise<User> {
+    return this.userRepository.findOne({
+      where: {
+        id,
+        deleted: false
+      }
+    });
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UserModule } from './catalogs/user/user.module';
 import config from './config'
 import { User } from './catalogs/user/entities/user.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -30,9 +29,8 @@ import { User } from './catalogs/user/entities/user.entity';
         models: [User]
       })
     }),
-    UserModule
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+    UserModule,
+    AuthModule
+  ]
 })
 export class AppModule {}
